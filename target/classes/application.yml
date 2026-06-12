@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: tcp-gateway
+
+server:
+  port: 8080
+
+tcp-gateway:
+  # Maximum time to wait for a correlated response before returning 504.
+  response-timeout-ms: 30000
+
+  # One entry per PPG (pool name must match the {ppg} path variable).
+  pools:
+    SIP_OUT:
+      host: localhost
+      port: 9001
+      pool-size: 5
+    SOP_OUT:
+      host: localhost
+      port: 9002
+      pool-size: 3

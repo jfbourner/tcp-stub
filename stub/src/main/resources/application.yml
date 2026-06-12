@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: tcp-stub
+
+server:
+  port: 8082   # REST control API — gateway runs on 8080
+
+tcp-stub:
+  # Maximum number of request/response entries kept in memory.
+  history-max-size: 200
+
+  # One listener per PPG; ports must match tcp-gateway's pool config.
+  listeners:
+    ppg1:
+      port: 9001
+    ppg2:
+      port: 9002
