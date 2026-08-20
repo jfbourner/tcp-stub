@@ -49,4 +49,4 @@ tcp-gateway:
 
 logging:
   level:
-    com.jackbourner.tcpgateway: DEBUG
+    com.jackbourner.tcpgateway: INFO

@@ -357,6 +357,8 @@ public class TcpConnectionPool {
      */
     private Mono<Void> sendOn(Connection conn, String correlationId, byte[] body) {
         byte[] frame = buildFrame(correlationId, body);
+        log.debug("Pool '{}' connId={} corrId='{}' — sending {} bytes",
+                name, connId(conn), correlationId, body.length);
         /*
          * LengthFieldPrepender in the pipeline will prepend the 4-byte length
          * header automatically, so we only pass [corrId][body] here.
