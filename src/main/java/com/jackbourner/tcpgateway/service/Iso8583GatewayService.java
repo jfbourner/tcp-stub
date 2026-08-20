@@ -28,6 +28,19 @@ public class Iso8583GatewayService {
         return toPaymentResponse(response);
     }
 
+    /**
+     * Like {@link #sendRequest} but returns whatever {@link FpsMessage} comes back
+     * as-is, rather than assuming a 9210. Use this for request types whose expected
+     * reply isn't 9210 (e.g. 9804 → 9814, 9420 → 9430) — {@link #sendRequest} would
+     * incorrectly throw {@link Mti9624Exception} for those.
+     */
+    public FpsMessage send(PaymentTypes ppg, FpsMessage request)
+            throws TcpDispatchService.DispatchException, InterruptedException, TimeoutException {
+        FpsMessage response = dispatch(ppg, request);
+        log.info("Response: {}", response);
+        return response;
+    }
+
     private FpsMessage dispatch(PaymentTypes ppg, FpsMessage request)
             throws TcpDispatchService.DispatchException, InterruptedException, TimeoutException {
         byte[] responseBytes = dispatchService.dispatch(ppg, request.toIsoBytes());
