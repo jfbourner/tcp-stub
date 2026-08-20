@@ -31,21 +31,10 @@ public class TcpGatewayController {
     }
 
     @PostMapping(
-            value = "/{direction}/{ppg}/ci-to-bank",
+            value = {"/{direction}/{ppg}/ci-to-bank", "/{direction}/{ppg}/"},
             consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<byte[]> ciToBank(
-            @PathVariable PaymentTypes ppg,
-            @RequestBody byte[] body)
-            throws TcpDispatchService.DispatchException, InterruptedException, TimeoutException {
-        return ResponseEntity.ok(dispatchService.dispatch(ppg, body));
-    }
-
-    @PostMapping(
-            value = "/{direction}/{ppg}/",
-            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<byte[]> generic(
             @PathVariable PaymentTypes ppg,
             @RequestBody byte[] body)
             throws TcpDispatchService.DispatchException, InterruptedException, TimeoutException {

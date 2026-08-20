@@ -1,7 +1,7 @@
 package com.jackbourner.tcpgateway.controller;
 
+import com.jackbourner.iso8583.exceptions.Mti9624Exception;
 import com.jackbourner.iso8583.models.AdminAdvice_9624;
-import com.jackbourner.tcpgateway.exceptions.Mti9624Exception;
 import com.jackbourner.tcpgateway.service.TcpDispatchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

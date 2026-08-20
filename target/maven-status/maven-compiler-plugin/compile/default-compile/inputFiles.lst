@@ -5,7 +5,6 @@
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/controller/Iso8583GatewayController.java
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/controller/TcpGatewayController.java
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/correlation/CorrelationRegistry.java
-/Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/exceptions/Mti9624Exception.java
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/handler/UnsolicitedMessageHandler.java
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/pool/TcpConnectionPool.java
 /Users/jackbourner/Documents/github/tcp-stub/src/main/java/com/jackbourner/tcpgateway/pool/TcpConnectionPoolManager.java

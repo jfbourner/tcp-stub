@@ -9,6 +9,5 @@ com/jackbourner/tcpgateway/handler/UnsolicitedMessageHandler.class
 com/jackbourner/tcpgateway/service/Iso8583GatewayService.class
 com/jackbourner/tcpgateway/TcpGatewayApplication.class
 com/jackbourner/tcpgateway/pool/TcpConnectionPoolManager.class
-com/jackbourner/tcpgateway/exceptions/Mti9624Exception.class
 com/jackbourner/tcpgateway/controller/GlobalExceptionHandler.class
 com/jackbourner/tcpgateway/controller/TcpGatewayController.class

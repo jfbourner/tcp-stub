@@ -1,8 +1,8 @@
 package com.jackbourner.tcpgateway.service;
 
 import com.jackbourner.iso8583.codec.Mappers;
+import com.jackbourner.iso8583.exceptions.Mti9624Exception;
 import com.jackbourner.iso8583.models.*;
-import com.jackbourner.tcpgateway.exceptions.Mti9624Exception;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 

@@ -25,12 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         properties = {
             // Override pool config so no real server is needed at test time.
             // Pool init will attempt connections and log warnings — that is expected.
-            "tcp-gateway.pools.ppg1.host=127.0.0.1",
-            "tcp-gateway.pools.ppg1.port=19001",
-            "tcp-gateway.pools.ppg1.pool-size=1",
-            "tcp-gateway.pools.ppg2.host=127.0.0.1",
-            "tcp-gateway.pools.ppg2.port=19002",
-            "tcp-gateway.pools.ppg2.pool-size=1"
+            "tcp-gateway.pools.SIP_IN.host=127.0.0.1",
+            "tcp-gateway.pools.SIP_IN.port=19001",
+            "tcp-gateway.pools.SIP_IN.pool-size=1",
+            "tcp-gateway.pools.SOP_IN.host=127.0.0.1",
+            "tcp-gateway.pools.SOP_IN.port=19002",
+            "tcp-gateway.pools.SOP_IN.pool-size=1"
         })
 @ActiveProfiles("test")
 class TcpGatewayApplicationTests {
@@ -49,7 +49,7 @@ class TcpGatewayApplicationTests {
 
     @Test
     void poolManagerKnowsConfiguredPools() {
-        assertThat(poolManager.getAllPools()).containsKeys(PaymentTypes.SIP_OUT, PaymentTypes.SIP_OUT);
+        assertThat(poolManager.getAllPools()).containsKeys(PaymentTypes.SIP_IN, PaymentTypes.SOP_IN);
     }
 
     @Test
