@@ -1,6 +1,6 @@
 package com.jackbourner.tcpgateway.controller;
 
-import com.jackbourner.iso8583.codec.FpsMessageFactory;
+import com.jackbourner.iso8583.factory.FpsMessageFactory;
 import com.jackbourner.iso8583.models.FpsMessage;
 import com.jackbourner.iso8583.models.PaymentRequestFromCIToBank_920x;
 import com.jackbourner.iso8583.models.PaymentResponseFromBankToCI_9210;

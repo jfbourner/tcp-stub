@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeoutException;
 
+import static com.jackbourner.iso8583.codec.MessageParser.extractMessageType;
 import static com.jackbourner.iso8583.protocol.Constants.*;
-import static com.jackbourner.iso8583.protocol.MessageParser.extractMessageType;
 
 @Service
 @Log4j2
