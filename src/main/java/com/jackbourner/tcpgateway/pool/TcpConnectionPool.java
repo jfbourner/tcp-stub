@@ -1,10 +1,10 @@
 package com.jackbourner.tcpgateway.pool;
 
 import com.jackbourner.iso8583.codec.Mappers;
+import com.jackbourner.iso8583.codec.MessageParser;
 import com.jackbourner.iso8583.models.AdminAdvice_9624;
 import com.jackbourner.iso8583.models.FpsMessage;
 import com.jackbourner.iso8583.models.PaymentTypes;
-import com.jackbourner.iso8583.protocol.MessageParser;
 import com.jackbourner.iso8583.protocol.MessageSchema;
 import tools.jackson.databind.ObjectMapper;
 import com.jackbourner.tcpgateway.config.PoolConfig;
