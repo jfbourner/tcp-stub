@@ -1,5 +1,8 @@
 package com.jackbourner.tcpgateway.service;
 
+import com.jackbourner.iso8583.codec.MessageParser;
+import com.jackbourner.iso8583.codec.Mappers;
+import com.jackbourner.iso8583.models.FpsMessage;
 import com.jackbourner.iso8583.models.PaymentTypes;
 import com.jackbourner.tcpgateway.correlation.CorrelationRegistry;
 import com.jackbourner.tcpgateway.pool.TcpConnectionPoolManager;
@@ -13,12 +16,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.jackbourner.iso8583.protocol.Constants.PAYMENT_REPEAT_REQUEST_9201;
+import static com.jackbourner.iso8583.protocol.Constants.PAYMENT_REQUEST_9200;
+
 /**
  * Shared send-and-wait logic used by all gateway controllers.
  * <p>
- * Picks the next available connection from the named pool, registers a correlation ID,
- * fires the bytes over TCP, then blocks until the correlated response arrives or the
- * timeout elapses.
+ * Picks the next available connection from the named pool, registers the outbound
+ * payload's Transaction Reference Number (TRN) — the only identifier carried on the
+ * wire — fires the bytes over TCP, then blocks until the correlated response arrives
+ * or the timeout elapses.
+ * <p>
+ * A short-lived, internal-only correlation ID is also generated per dispatch purely
+ * for log tracing (connection id + correlation id + TRN); it never goes over the wire
+ * and plays no part in matching the response.
  */
 @Service
 public class TcpDispatchService {
@@ -50,17 +61,24 @@ public class TcpDispatchService {
     public byte[] dispatch(PaymentTypes paymentType, byte[] payload)
             throws TimeoutException, InterruptedException, DispatchException {
 
-        String corrId = generateCorrId();
-        log.debug("paymentType pool='{}' corrId={} payloadBytes={}", paymentType, corrId, payload.length);
+        String trn;
+        try {
+            trn = extractTrn(payload);
+        } catch (Exception e) {
+            throw new DispatchException("Could not determine TRN for outbound payload", e);
+        }
 
-        CompletableFuture<byte[]> future = correlationRegistry.register(corrId);
+        String corrId = generateCorrId();
+        log.debug("dispatch pool='{}' corrId={} trn='{}' payloadBytes={}", paymentType, corrId, trn, payload.length);
+
+        CompletableFuture<byte[]> future = correlationRegistry.register(trn);
 
         try {
             poolManager.getPool(paymentType)
-                    .send(corrId, payload)
+                    .send(trn, payload)
                     .doOnError(err -> {
-                        log.error("Send error corrId={}: {}", corrId, err.getMessage());
-                        correlationRegistry.remove(corrId);
+                        log.error("Send error corrId={} trn='{}': {}", corrId, trn, err.getMessage());
+                        correlationRegistry.remove(trn);
                         future.completeExceptionally(err);
                     })
                     .subscribe();
@@ -68,15 +86,31 @@ public class TcpDispatchService {
             return future.get(responseTimeoutMs, TimeUnit.MILLISECONDS);
 
         } catch (TimeoutException | InterruptedException e) {
-            correlationRegistry.remove(corrId);
+            correlationRegistry.remove(trn);
             throw e;
         } catch (java.util.concurrent.ExecutionException e) {
-            throw new DispatchException("Send failed for corrId=" + corrId, e.getCause());
+            throw new DispatchException("Send failed for corrId=" + corrId + " trn='" + trn + "'", e.getCause());
         }
     }
 
     private static String generateCorrId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    /**
+     * Extracts the TRN from an outbound (CI-to-bank direction) payload. 9200/9201 are
+     * ambiguous MTIs (a different field set applies bank-to-CI) so they're parsed with
+     * the explicit CI-to-bank mapper; every other outbound MTI this gateway sends
+     * (9420/9421, 9804) is unambiguous and resolved by {@link MessageParser#parseToModel}.
+     */
+    private static String extractTrn(byte[] payload) {
+        String mti = MessageParser.extractMessageType(payload);
+        FpsMessage msg = switch (mti) {
+            case PAYMENT_REQUEST_9200, PAYMENT_REPEAT_REQUEST_9201 ->
+                    Mappers.PAYMENT_REQUEST_CI_TO_BANK_MAPPER.fromBytes(payload);
+            default -> MessageParser.parseToModel(payload);
+        };
+        return msg.getTransactionReferenceNumber();
     }
 
     // -------------------------------------------------------------------------

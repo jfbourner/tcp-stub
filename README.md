@@ -18,20 +18,27 @@ messages — in both directions.
 Every frame, in both directions, looks like:
 
 ```
-[4 bytes: length, big-endian][12 bytes: correlation ID, ASCII, space-padded][ISO 8583 body]
+[4 bytes: length, big-endian][ISO 8583 body]
 ```
 
-The 4-byte length prefix covers everything after it (corrId + body). A
-`LengthFieldBasedFrameDecoder`/`LengthFieldPrepender` pair handles framing on read/write,
-so application code only ever deals with `[corrId][body]`.
+The 4-byte length prefix covers just the body — nothing proprietary rides alongside it.
+A `LengthFieldBasedFrameDecoder`/`LengthFieldPrepender` pair handles framing on
+read/write, so application code only ever deals with the raw ISO 8583 body.
+
+There is no correlation ID (or any other header) on the wire in either direction.
+Requests and responses are matched purely by the Transaction Reference Number (TRN)
+already carried inside the ISO 8583 body (DE31) — the same field a human would use to
+trace a payment. A short-lived, internal-only correlation ID is generated per outbound
+dispatch purely so log lines can be grepped end-to-end (connection id + correlation id +
+TRN); it never goes over the wire and plays no part in matching.
 
 ### Connection pools
 
 `TcpConnectionPoolManager` opens one `TcpConnectionPool` per configured PPG (payment
 processing gateway) entry — each pool holds N outbound TCP connections (this service is
 always the one that dials out, `pool-size` per pool is configurable). Every connection
-gets its own persistent read loop; correlated replies are matched via the 12-byte
-correlation ID and a `CorrelationRegistry`.
+gets its own persistent read loop; correlated replies are matched via the TRN parsed
+out of the response body and a `CorrelationRegistry`.
 
 Pool names are a `PaymentTypes` enum value, and direction is named from the perspective
 of who **initiates the payment request**, not who dials the TCP connection (both
@@ -51,16 +58,19 @@ There is no `USM_OUT` — network management is inbound-only.
 
 ### Inbound (bank-initiated) message handling
 
-Every connection's read loop checks each frame's correlation ID against the
-`CorrelationRegistry` first:
+Every connection's read loop first checks the inbound frame's MTI:
 
-- **Matched** — this is the reply to a request this service sent; the waiting HTTP
-  caller (or `tcp-stub-tester`-style test caller) is unblocked with the response bytes.
-- **Unmatched** — the frame is unsolicited (bank-initiated). It's dispatched by MTI:
+- **Response-shaped MTI** (`9210`, `9430`, `9814`, `9834`) — this service never sends
+  these MTIs itself, so an inbound one is always the reply to something it sent. Its
+  TRN is parsed out of the body and matched against the `CorrelationRegistry`; a match
+  unblocks the waiting HTTP caller (or `tcp-stub-tester`-style test caller) with the
+  response bytes. No match means a late/stray response — logged and routed to
+  `UnsolicitedMessageHandler`.
+- **Any other MTI** — necessarily bank-initiated. It's dispatched by MTI:
 
 | MTI (unsolicited) | Handling |
 |---|---|
-| `9804` (network management request) | build a `9814` approval carrying the same TRN/function code, send back on the **same connection**, echoing the same corrId |
+| `9804` (network management request) | build a `9814` approval carrying the same TRN/function code, send back on the **same connection** |
 | `9200` (payment request from bank) | build a `9210` acceptance carrying the same TRN, send back the same way |
 | `9624` (admin advice) | logged at WARN (functionCode, infoText) and dropped — no TRN, no reply |
 | anything else | routed to `UnsolicitedMessageHandler` (log-only fallback) |
@@ -168,8 +178,11 @@ mvn verify             # run tests
 
 - **`iso8583-library`** — the shared ISO 8583/FPS message models, mappers, and codec
   this service and its test tooling both depend on.
-- **`stub/`** (this repo) — a TCP stub server for integration-testing the gateway's
-  outbound (`_IN`) flows.
+- **`stub/`** (this repo) — an unused, unmaintained prototype TCP stub (not wired into
+  the Maven build, last touched in the initial commit, depends on the older `j8583`
+  library rather than `iso8583-library`). It predates and was superseded by
+  `tcp-stub-tester` below, and still speaks the old corrId-prefixed wire protocol — it
+  is **not** interoperable with this gateway.
 - **`tcp-stub-tester`** — a separate TCP stub that plays the bank/scheme role for
   testing the gateway's inbound (`_OUT`) flows, including pushing 9200/9804 requests
   and waiting for correlated replies via `/stub/{ppg}/send`.
